@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How The Music Moves You</title>
+<style>
+  :root{
+    --ink:#1c2430; --muted:#5a6572; --accent:#2f5d84; --accent-dark:#234863;
+    --card:#ffffff; --bg:#eef2f6; --line:#d4dce4; --soft:#f2f7fb;
+    --note:#ffe94d; --note-line:#e3cf3a; --steel:#33587a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45;}
+  .wrap{max-width:860px;margin:0 auto;padding:16px 14px 48px;}
+  header{margin:10px 0 6px;}
+  h1{font-size:1.7rem;margin:0 0 2px;}
+  h2{font-size:1.25rem;margin:0 0 4px;}
+  .subtitle{color:var(--muted);font-size:1rem;margin:0 0 10px;}
+  .intro{font-size:1.02rem;margin:0 0 10px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin:14px 0;box-shadow:0 1px 3px rgba(20,40,60,.06);}
+  .parthead{background:var(--steel);color:#fff;border-radius:8px;padding:10px 14px;margin:0 0 12px;}
+  .parthead h2{color:#fff;margin:0;}
+  .starter{color:var(--muted);margin:0 0 12px;}
+  label.fieldlabel{display:block;font-weight:600;margin:12px 0 4px;}
+  label.fieldlabel:first-child{margin-top:0;}
+  input[type=text].field{width:100%;padding:9px 10px;font:inherit;font-size:1rem;
+    border:1px solid var(--line);border-radius:8px;min-height:44px;}
+  textarea{width:100%;padding:9px 10px;font:inherit;font-size:1rem;border:1px solid var(--line);
+    border-radius:8px;min-height:84px;resize:vertical;}
+  select{width:100%;padding:9px 10px;font:inherit;font-size:1rem;border:1px solid var(--line);
+    border-radius:8px;min-height:44px;background:#fff;}
+  button{cursor:pointer;font:inherit;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    padding:9px 16px;border-radius:8px;min-height:44px;font-weight:600;}
+  button:hover{background:var(--accent-dark);}
+  button.secondary{background:#fff;color:var(--accent);}
+  button.secondary:hover{background:var(--soft);}
+  button.remove{background:#fff;color:#b3261e;border-color:#d8a49f;padding:9px 12px;flex:0 0 auto;}
+  button.remove:hover{background:#fdf2f1;}
+  button:disabled{opacity:.5;cursor:default;}
+  button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a.watchbtn:focus-visible{
+    outline:3px solid #f2b01e;outline-offset:2px;}
+  .addrow{margin-top:10px;}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 0;}
+  a.watchbtn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;
+    padding:11px 18px;border-radius:8px;min-height:44px;margin:4px 0 12px;}
+  a.watchbtn:hover{background:var(--accent-dark);}
+  .note-row{display:flex;gap:8px;align-items:center;margin:8px 0;}
+  .note-row input[type=text]{flex:1 1 auto;min-width:0;background:var(--note);border:1px solid var(--note-line);
+    padding:10px 12px;font:inherit;font-size:1rem;border-radius:4px;min-height:48px;
+    box-shadow:0 2px 3px rgba(20,40,60,.15);}
+  .songcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0;background:var(--soft);}
+  .songcard h3{margin:0 0 4px;font-size:1.05rem;}
+  .drawtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 10px;}
+  .swatch{width:40px;height:40px;min-height:40px;border-radius:50%;border:3px solid #fff;
+    box-shadow:0 0 0 2px var(--line);padding:0;}
+  .swatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink);}
+  .sizebtn{background:#fff;color:var(--ink);border:2px solid var(--line);min-height:40px;padding:6px 12px;}
+  .sizebtn[aria-pressed="true"]{border-color:var(--ink);background:var(--soft);}
+  canvas.pad{width:100%;height:auto;background:#fff;border:2px solid var(--line);border-radius:10px;
+    touch-action:none;display:block;}
+  .summary h2{margin-top:0;}
+  .summary h3{margin:16px 0 4px;font-size:1.05rem;}
+  .summary p.answer{margin:4px 0;white-space:pre-wrap;}
+  .summary ul{margin:4px 0 0;padding-left:22px;}
+  .summary li{margin:3px 0;}
+  .summary ol{margin:4px 0 0;padding-left:22px;}
+  .summary ol li{margin:6px 0;}
+  .drawing-img{max-width:100%;height:auto;border:2px solid var(--line);border-radius:10px;background:#fff;}
+  .empty-note{color:var(--muted);font-style:italic;}
+  .copied{color:var(--accent-dark);font-weight:600;min-height:1.3em;margin:10px 0 0;}
+  .hidden{display:none !important;}
+  @media (max-width:560px){
+    h1{font-size:1.4rem;}
+    button.remove span.word{display:none;}
+  }
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .card{box-shadow:none;border-color:#999;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>How The Music Moves You</h1>
+    <p class="subtitle">Grade 9 STEAM, Beyond Our Planet, Lesson 8: Music and Space (Extension Activity)</p>
+    <p class="intro">Listening to music can evoke an emotional response. In this activity you will watch and listen to one song closely, build a personal soundtrack of five songs that represent who you are, and create an illustration for one of them. Your journal stays on this page: nothing is sent anywhere. When you finish, print or copy your journal to keep it with your work.</p>
+  </header>
+
+  <main id="board">
+    <section class="card" aria-labelledby="h-part1">
+      <div class="parthead"><h2 id="h-part1">Part 1: What does it all mean?</h2></div>
+      <p class="intro">First, watch the video for "Rocket Man" by Elton John. The video is an animated film created by filmmaker Majid Adin. Listen and watch closely, and notice the feelings and emotions that the song and the images bring up for you.</p>
+      <p><a class="watchbtn" href="https://www.youtube.com/watch?v=DtVBCG6ThDk" target="_blank" rel="noopener">Watch "Rocket Man" by Elton John (opens in a new tab)</a></p>
+      <label class="fieldlabel">My feelings and emotions</label>
+      <p class="starter">After listening to and watching the video, use the sticky notes below to list at least 3 feelings and/or emotions that you experienced. Put one feeling or emotion on each note. For example, you might feel happy, excited, or intrigued: your notes will be your own.</p>
+      <div id="feelingList"></div>
+      <div class="addrow no-print">
+        <button type="button" class="secondary" id="addFeeling">Add another note</button>
+      </div>
+
+      <label class="fieldlabel" for="q1Text">Question 1: Of all the feelings and emotions that you listed on your notes, which do you think represents the song the best? Please explain.</label>
+      <textarea id="q1Text" placeholder="Type your answer..."></textarea>
+
+      <label class="fieldlabel" for="q2Text">Question 2: Why do you think this particular video was used to go along with the song Rocket Man? What connections can you make between the lyrics and the images that are being shown in the video? Please explain.</label>
+      <textarea id="q2Text" placeholder="Type your answer..."></textarea>
+
+      <label class="fieldlabel" for="q3Text">Question 3: Does the video and song work well together or does one distract you from the other? Please explain.</label>
+      <textarea id="q3Text" placeholder="Type your answer..."></textarea>
+    </section>
+
+    <section class="card" aria-labelledby="h-part2">
+      <div class="parthead"><h2 id="h-part2">Part 2: Sounds that move you!</h2></div>
+      <p class="intro">List and explain the five songs that would make up your personal soundtrack. Really think about what represents who you are and what you are about. These songs might not necessarily be your favourite songs, but they should be songs that represent who you are.</p>
+      <div id="songList"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-part3">
+      <div class="parthead"><h2 id="h-part3">Part 3: Art imitates life</h2></div>
+      <p class="intro">Now that you have had a chance to explore Rocket Man, as well as your own personal soundtrack, it is time to express yourself. Select one of the five songs that you listed in Part 2 and illustrate it. You can choose to create several illustrations that represent different parts of the song, or you can choose to create one illustration which represents the entire piece. You can choose any medium you would like: digital, paint, pastel, pencil crayon, and so on. The drawing pad below is one way to create your illustration right here.</p>
+      <label class="fieldlabel" for="songChoice">The song I will illustrate</label>
+      <select id="songChoice"></select>
+      <div class="drawtools no-print" role="group" aria-label="Drawing tools">
+        <span id="artColors"></span>
+        <button type="button" class="sizebtn" data-asize="3" aria-pressed="false">Thin</button>
+        <button type="button" class="sizebtn" data-asize="7" aria-pressed="true">Medium</button>
+        <button type="button" class="sizebtn" data-asize="14" aria-pressed="false">Thick</button>
+        <button type="button" class="secondary" id="artUndo">Undo</button>
+        <button type="button" class="secondary" id="artClear">Clear drawing</button>
+      </div>
+      <canvas id="artPad" class="pad" width="720" height="460" aria-label="Drawing area for your illustration"></canvas>
+      <label class="fieldlabel" for="artAbout">About my illustration</label>
+      <textarea id="artAbout" placeholder="What does your illustration show? Which part of the song does it represent?"></textarea>
+    </section>
+
+    <div class="actions no-print">
+      <button type="button" id="finishBtn">See my listening journal</button>
+    </div>
+  </main>
+
+  <section class="card summary hidden" id="summary" aria-labelledby="h-summary">
+    <h2 id="h-summary">My Listening Journal</h2>
+    <p class="subtitle">Grade 9 STEAM, Beyond Our Planet, Lesson 8: How The Music Moves You</p>
+    <div id="summaryBody"></div>
+    <div class="actions no-print">
+      <button type="button" id="printBtn">Print</button>
+      <button type="button" class="secondary" id="copyBtn">Copy</button>
+      <button type="button" class="secondary" id="backBtn">Back to my journal</button>
+    </div>
+    <p class="copied" id="copyNote" role="status" aria-live="polite"></p>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var COLORS = [
+    { name: "Black", value: "#1c2430" },
+    { name: "Steel blue", value: "#33587a" },
+    { name: "Purple", value: "#7b2dbe" },
+    { name: "Pink", value: "#d1345b" },
+    { name: "Red", value: "#c23b2e" },
+    { name: "Orange", value: "#e07b00" },
+    { name: "Yellow", value: "#d9a400" },
+    { name: "Green", value: "#1e8a4c" },
+    { name: "Brown", value: "#8a5a2b" },
+    { name: "Eraser (white)", value: "#ffffff" }
+  ];
+
+  function val(id) { return document.getElementById(id).value.trim(); }
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+  }
+
+  /* Part 1: sticky note feelings */
+  var feelingList = document.getElementById("feelingList");
+  function feelingValues() {
+    var values = [];
+    Array.prototype.forEach.call(feelingList.querySelectorAll(".note-row input"), function (input) {
+      var v = input.value.trim();
+      if (v) { values.push(v); }
+    });
+    return values;
+  }
+  function refreshFeelings() {
+    var rows = feelingList.querySelectorAll(".note-row");
+    rows.forEach(function (row) {
+      var btn = row.querySelector(".remove");
+      if (btn) { btn.disabled = rows.length <= 1; }
+    });
+  }
+  function addFeelingRow(focus) {
+    var row = document.createElement("div");
+    row.className = "note-row";
+    var input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "One feeling or emotion...";
+    input.setAttribute("aria-label", "A feeling or emotion from the song");
+    input.autocomplete = "off";
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove";
+    remove.innerHTML = "&#10005;<span class=\"word\"> Remove</span>";
+    remove.setAttribute("aria-label", "Remove this note");
+    remove.addEventListener("click", function () {
+      if (feelingList.querySelectorAll(".note-row").length <= 1) { return; }
+      row.remove();
+      refreshFeelings();
+    });
+    row.appendChild(input);
+    row.appendChild(remove);
+    feelingList.appendChild(row);
+    refreshFeelings();
+    if (focus) { input.focus(); }
+    return row;
+  }
+  addFeelingRow(false);
+  addFeelingRow(false);
+  addFeelingRow(false);
+  document.getElementById("addFeeling").addEventListener("click", function () { addFeelingRow(true); });
+
+  /* Part 2: five songs */
+  var songList = document.getElementById("songList");
+  var songFields = [];
+  for (var i = 0; i < 5; i++) {
+    (function (n) {
+      var card = document.createElement("div");
+      card.className = "songcard";
+      var h = document.createElement("h3");
+      h.textContent = "Song " + n;
+      card.appendChild(h);
+      var tLabel = document.createElement("label");
+      tLabel.className = "fieldlabel";
+      tLabel.setAttribute("for", "songTitle" + n);
+      tLabel.textContent = "Song title";
+      var tInput = document.createElement("input");
+      tInput.type = "text";
+      tInput.className = "field";
+      tInput.id = "songTitle" + n;
+      tInput.placeholder = "The title of the song...";
+      tInput.autocomplete = "off";
+      var aLabel = document.createElement("label");
+      aLabel.className = "fieldlabel";
+      aLabel.setAttribute("for", "songArtist" + n);
+      aLabel.textContent = "Artist or group";
+      var aInput = document.createElement("input");
+      aInput.type = "text";
+      aInput.className = "field";
+      aInput.id = "songArtist" + n;
+      aInput.placeholder = "Who performs it...";
+      aInput.autocomplete = "off";
+      var wLabel = document.createElement("label");
+      wLabel.className = "fieldlabel";
+      wLabel.setAttribute("for", "songWhy" + n);
+      wLabel.textContent = "Why this song represents me";
+      var wInput = document.createElement("textarea");
+      wInput.id = "songWhy" + n;
+      wInput.placeholder = "Explain why this song belongs on your personal soundtrack...";
+      card.appendChild(tLabel);
+      card.appendChild(tInput);
+      card.appendChild(aLabel);
+      card.appendChild(aInput);
+      card.appendChild(wLabel);
+      card.appendChild(wInput);
+      songList.appendChild(card);
+      songFields.push({ n: n, title: tInput, artist: aInput, why: wInput });
+    })(i + 1);
+  }
+
+  function songData() {
+    return songFields.map(function (s) {
+      return { n: s.n, title: s.title.value.trim(), artist: s.artist.value.trim(), why: s.why.value.trim() };
+    });
+  }
+  function songLabel(s) {
+    var label = "Song " + s.n;
+    if (s.title) { label += ": " + s.title; }
+    if (s.artist) { label += " by " + s.artist; }
+    if (!s.title && !s.artist) { label += " (not filled in yet)"; }
+    return label;
+  }
+
+  /* Part 3: song choice stays in step with Part 2 */
+  var songChoice = document.getElementById("songChoice");
+  function refreshSongChoice() {
+    var current = songChoice.value;
+    var songs = songData();
+    songChoice.innerHTML = "";
+    songs.forEach(function (s) {
+      var opt = document.createElement("option");
+      opt.value = String(s.n);
+      opt.textContent = songLabel(s);
+      songChoice.appendChild(opt);
+    });
+    if (current && songChoice.querySelector("option[value='" + current + "']")) {
+      songChoice.value = current;
+    }
+  }
+  songList.addEventListener("input", refreshSongChoice);
+  refreshSongChoice();
+
+  /* Part 3: drawing pad */
+  var pad = document.getElementById("artPad");
+  var ctx = null;
+  try { ctx = pad.getContext("2d"); } catch (e) { ctx = null; }
+  var strokes = [];
+  var current = null;
+  var drawing = false;
+  var penColor = COLORS[0].value;
+  var penSize = 7;
+  function redrawPad() {
+    if (!ctx) { return; }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, pad.width, pad.height);
+    strokes.forEach(function (s) {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.size;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      s.points.forEach(function (p, i) {
+        if (i === 0) { ctx.moveTo(p.x, p.y); } else { ctx.lineTo(p.x, p.y); }
+      });
+      ctx.stroke();
+    });
+  }
+  redrawPad();
+  var colorBox = document.getElementById("artColors");
+  COLORS.forEach(function (c, i) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "swatch";
+    b.style.background = c.value;
+    b.setAttribute("aria-label", "Pen colour: " + c.name);
+    b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+    b.addEventListener("click", function () {
+      penColor = c.value;
+      Array.prototype.forEach.call(colorBox.querySelectorAll(".swatch"), function (s) {
+        s.setAttribute("aria-pressed", "false");
+      });
+      b.setAttribute("aria-pressed", "true");
+    });
+    colorBox.appendChild(b);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-asize]"), function (b) {
+    b.addEventListener("click", function () {
+      penSize = parseInt(b.getAttribute("data-asize"), 10);
+      Array.prototype.forEach.call(document.querySelectorAll("[data-asize]"), function (s) {
+        s.setAttribute("aria-pressed", "false");
+      });
+      b.setAttribute("aria-pressed", "true");
+    });
+  });
+  function padPos(evt) {
+    var rect = pad.getBoundingClientRect();
+    var rw = rect.width || pad.width;
+    var rh = rect.height || pad.height;
+    return {
+      x: (evt.clientX - rect.left) * (pad.width / rw),
+      y: (evt.clientY - rect.top) * (pad.height / rh)
+    };
+  }
+  pad.addEventListener("pointerdown", function (evt) {
+    if (!ctx) { return; }
+    drawing = true;
+    current = { color: penColor, size: penSize, points: [padPos(evt)] };
+    strokes.push(current);
+    if (pad.setPointerCapture) { try { pad.setPointerCapture(evt.pointerId); } catch (e) {} }
+    redrawPad();
+    evt.preventDefault();
+  });
+  pad.addEventListener("pointermove", function (evt) {
+    if (!drawing || !current) { return; }
+    current.points.push(padPos(evt));
+    redrawPad();
+  });
+  function stopStroke() { drawing = false; current = null; }
+  pad.addEventListener("pointerup", stopStroke);
+  pad.addEventListener("pointercancel", stopStroke);
+  pad.addEventListener("pointerleave", stopStroke);
+  document.getElementById("artUndo").addEventListener("click", function () { strokes.pop(); redrawPad(); });
+  document.getElementById("artClear").addEventListener("click", function () { strokes = []; redrawPad(); });
+
+  /* Summary */
+  function answerHtml(text, emptyText) {
+    if (!text) { return "<p class=\"empty-note\">" + emptyText + "</p>"; }
+    return "<p class=\"answer\">" + escapeHtml(text) + "</p>";
+  }
+  function listHtml(items, emptyText) {
+    if (!items.length) { return "<p class=\"empty-note\">" + emptyText + "</p>"; }
+    var html = "<ul>";
+    items.forEach(function (item) { html += "<li>" + escapeHtml(item) + "</li>"; });
+    return html + "</ul>";
+  }
+  function collectData() {
+    var drawingUrl = "";
+    if (strokes.length > 0) {
+      try { drawingUrl = pad.toDataURL("image/png"); } catch (e) { drawingUrl = ""; }
+    }
+    var chosenN = parseInt(songChoice.value || "1", 10);
+    var songs = songData();
+    var chosen = songs.filter(function (s) { return s.n === chosenN; })[0] || songs[0];
+    return {
+      feelings: feelingValues(),
+      q1: val("q1Text"),
+      q2: val("q2Text"),
+      q3: val("q3Text"),
+      songs: songs,
+      chosen: chosen,
+      drawingUrl: drawingUrl,
+      hasDrawn: strokes.length > 0,
+      artAbout: val("artAbout")
+    };
+  }
+  function compileSummaryHtml(d) {
+    var html = "";
+    html += "<h3>Part 1: Rocket Man, my feelings and emotions</h3>";
+    html += listHtml(d.feelings, "No feelings added yet.");
+    html += "<h3>Question 1: The feeling that represents the song the best</h3>";
+    html += answerHtml(d.q1, "Nothing added yet.");
+    html += "<h3>Question 2: Why this video, and how the lyrics and images connect</h3>";
+    html += answerHtml(d.q2, "Nothing added yet.");
+    html += "<h3>Question 3: Do the video and song work well together?</h3>";
+    html += answerHtml(d.q3, "Nothing added yet.");
+    html += "<h3>Part 2: My personal soundtrack</h3>";
+    var anySong = d.songs.some(function (s) { return s.title || s.artist || s.why; });
+    if (!anySong) {
+      html += "<p class=\"empty-note\">No songs added yet.</p>";
+    } else {
+      html += "<ol>";
+      d.songs.forEach(function (s) {
+        html += "<li><strong>" + escapeHtml(s.title || "Untitled song") + "</strong>";
+        if (s.artist) { html += " by " + escapeHtml(s.artist); }
+        html += "<br>" + escapeHtml(s.why || "No explanation added yet.") + "</li>";
+      });
+      html += "</ol>";
+    }
+    html += "<h3>Part 3: My illustration</h3>";
+    html += "<p class=\"answer\">Song illustrated: <strong>" + escapeHtml(songLabel(d.chosen)) + "</strong></p>";
+    if (d.drawingUrl) {
+      html += "<img class=\"drawing-img\" src=\"" + d.drawingUrl + "\" alt=\"My illustration for the song I chose\">";
+    } else {
+      html += "<p class=\"empty-note\">No illustration drawn here yet. (You may have created yours in another medium.)</p>";
+    }
+    html += answerHtml(d.artAbout, "");
+    html += "<p class=\"intro\" style=\"margin-top:16px;\">You have finished your listening journal. Take a break from your screen before continuing on to the next lesson.</p>";
+    return html;
+  }
+  function compileSummaryText(d) {
+    var lines = ["My Listening Journal", "Grade 9 STEAM, Beyond Our Planet, Lesson 8: How The Music Moves You", ""];
+    function qa(title, text) {
+      lines.push(title);
+      lines.push(text || "(Nothing added yet.)");
+      lines.push("");
+    }
+    lines.push("Part 1: Rocket Man, my feelings and emotions");
+    if (d.feelings.length) { d.feelings.forEach(function (f) { lines.push("- " + f); }); }
+    else { lines.push("(No feelings added yet.)"); }
+    lines.push("");
+    qa("Question 1: The feeling that represents the song the best", d.q1);
+    qa("Question 2: Why this video, and how the lyrics and images connect", d.q2);
+    qa("Question 3: Do the video and song work well together?", d.q3);
+    lines.push("Part 2: My personal soundtrack");
+    d.songs.forEach(function (s) {
+      lines.push(s.n + ". " + (s.title || "Untitled song") + (s.artist ? " by " + s.artist : ""));
+      lines.push("   " + (s.why || "No explanation added yet."));
+    });
+    lines.push("");
+    lines.push("Part 3: My illustration");
+    lines.push("Song illustrated: " + songLabel(d.chosen));
+    lines.push("Illustration: " + (d.hasDrawn ? "drawn on the page (see the printed copy)" : "not drawn here (it may have been created in another medium)"));
+    qa("About my illustration", d.artAbout);
+    lines.push("You have finished your listening journal. Take a break from your screen before continuing on to the next lesson.");
+    return lines.join("\n");
+  }
+
+  var board = document.getElementById("board");
+  var summary = document.getElementById("summary");
+  var summaryBody = document.getElementById("summaryBody");
+  var copyNote = document.getElementById("copyNote");
+
+  document.getElementById("finishBtn").addEventListener("click", function () {
+    var data = collectData();
+    summaryBody.innerHTML = compileSummaryHtml(data);
+    summary.classList.remove("hidden");
+    board.classList.add("hidden");
+    copyNote.textContent = "";
+    document.getElementById("h-summary").setAttribute("tabindex", "-1");
+    document.getElementById("h-summary").focus();
+    window.scrollTo(0, 0);
+  });
+  document.getElementById("backBtn").addEventListener("click", function () {
+    summary.classList.add("hidden");
+    board.classList.remove("hidden");
+    window.scrollTo(0, 0);
+  });
+  document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var text = compileSummaryText(collectData());
+    function done() { copyNote.textContent = "Copied. You can paste your listening journal wherever you keep your work."; }
+    function fallback() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        done();
+      } catch (e) {
+        copyNote.textContent = "Copy did not work here. Try printing your journal instead.";
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>
